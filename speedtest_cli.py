@@ -23,6 +23,7 @@ import signal
 import socket
 import timeit
 import threading
+import datetime
 
 __version__ = '0.3.2'
 
@@ -549,6 +550,7 @@ def speedtest():
                         help='HTTP timeout in seconds. Default 10')
     parser.add_argument('--version', action='store_true',
                         help='Show the version number and exit')
+    parser.add_argument('--log', help='Path to log file')
 
     options = parser.parse_args()
     if isinstance(options, tuple):
@@ -676,6 +678,12 @@ def speedtest():
     else:
         print_('Ping: %(latency)s ms' % best)
 
+    if args.log:
+        f = open(args.log, 'a')
+        f.write('%s;' % (datetime.datetime.now()))
+        f.write(repr(best['name'])+';')
+        f.write(repr(best['latency'])+';')
+
     sizes = [350, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000]
     urls = []
     for size in sizes:
@@ -685,6 +693,11 @@ def speedtest():
     if not args.simple:
         print_('Testing download speed', end='')
     dlspeed = downloadSpeed(urls, args.simple)
+    
+    if args.log:
+        f.write(repr((dlspeed / 1000 / 1000) * args.units[1]))
+        f.write(';')
+    
     if not args.simple:
         print_()
     print_('Download: %0.2f M%s/s' %
@@ -702,6 +715,12 @@ def speedtest():
         print_()
     print_('Upload: %0.2f M%s/s' %
            ((ulspeed / 1000 / 1000) * args.units[1], args.units[0]))
+
+    if args.log:
+        f.write(repr((ulspeed / 1000 / 1000) * args.units[1]))
+        f.write(';')
+        f.write('\n')
+        f.close
 
     if args.share and args.mini:
         print_('Cannot generate a speedtest.net share results image while '
